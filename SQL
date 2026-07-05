@@ -1,0 +1,146 @@
+-- Section A : Data Cleaning --
+-- Check missing values (not found missing value)
+SELECT
+    COUNT(*) AS total_rows,
+    COUNT(age),
+    COUNT(sex),
+    COUNT(bmi),
+    COUNT(children),
+    COUNT(smoker),
+    COUNT(region),
+    COUNT(charges)
+FROM insurance;
+
+-- Check duplicate values (found 2 rows)
+SELECT *, COUNT(*)
+FROM insurance
+GROUP BY age, sex, bmi, children, smoker, region, charges
+HAVING COUNT(*) > 1;
+
+-- Check invalid values
+SELECT MIN(age), MAX(age), MIN(bmi), MAX(bmi), MIN(charges), MAX(charges)
+FROM insurance;
+
+-- Create a cleaned table by removing duplicate rows
+CREATE TABLE insurance_clean AS
+SELECT DISTINCT *
+FROM insurance;
+
+------------------------------------------------------------------------------------------
+-- Section B : Exploratory Data Analysis --
+-- Top 20 Records with Highest Insurance Charges and Feature Patterns
+-- The strongest factor is smoking, followed by age, BMI, and (sex, region) in that order.
+SELECT *
+FROM insurance_clean
+ORDER BY charges DESC
+LIMIT 20;
+
+SELECT age, AVG(charges)
+FROM insurance_clean
+GROUP BY age
+ORDER BY AVG(charges) DESC;
+-- group age
+SELECT
+    CASE
+        WHEN age BETWEEN 18 AND 25 THEN '18–25'
+        WHEN age BETWEEN 26 AND 35 THEN '26–35'
+        WHEN age BETWEEN 36 AND 45 THEN '36–45'
+        WHEN age BETWEEN 46 AND 55 THEN '46–55'
+        ELSE '56+'
+    END AS age_group,
+    AVG(charges) AS avg_charges
+FROM insurance_clean
+GROUP BY age_group
+ORDER BY age_group;
+
+SELECT sex, AVG(charges)
+FROM insurance_clean
+GROUP BY sex
+ORDER BY AVG(charges) DESC;
+
+SELECT bmi, AVG(charges)
+FROM insurance_clean
+GROUP BY bmi
+ORDER BY AVG(charges) DESC;
+-- group bmi
+SELECT
+	CASE 
+		WHEN bmi < 18.5 THEN 'Underweight'
+		WHEN bmi <= 22.9 THEN 'Normal Weight'
+		WHEN bmi <= 24.9 THEN 'Overweight'
+		WHEN bmi <= 29.9 THEN 'Obesity level 1'
+		ELSE 'Obesity level 2'
+	END AS bmi_category,
+	AVG(charges) AS avg_charges
+FROM insurance_clean
+GROUP BY bmi_category
+ORDER BY avg_charges DESC;
+
+SELECT children, AVG(charges)
+FROM insurance_clean
+GROUP BY children
+ORDER BY AVG(charges) DESC;
+
+SELECT smoker, AVG(charges)
+FROM insurance_clean
+GROUP BY smoker
+ORDER BY AVG(charges) DESC;
+
+SELECT region, AVG(charges)
+FROM insurance_clean
+GROUP BY region
+ORDER BY AVG(charges) DESC;
+
+-- compare smoker with age and bmi
+SELECT smoker,
+       AVG(age),
+	   AVG(bmi),
+       AVG(charges)
+FROM insurance_clean
+GROUP BY smoker; 
+
+SELECT smoker,
+       CASE
+        WHEN age BETWEEN 18 AND 25 THEN '18–25'
+        WHEN age BETWEEN 26 AND 35 THEN '26–35'
+        WHEN age BETWEEN 36 AND 45 THEN '36–45'
+        WHEN age BETWEEN 46 AND 55 THEN '46–55'
+        ELSE '56+'
+		END AS age_group, 
+       AVG(charges)
+FROM insurance_clean
+GROUP BY smoker, age_group
+ORDER BY AVG(charges) DESC;
+
+SELECT smoker,
+       CASE 
+		WHEN bmi < 18.5 THEN 'Underweight'
+		WHEN bmi <= 22.9 THEN 'Normal Weight'
+		WHEN bmi <= 24.9 THEN 'Overweight'
+		WHEN bmi <= 29.9 THEN 'Obesity level 1'
+		ELSE 'Obesity level 2'
+		END AS bmi_category,
+       AVG(charges)
+FROM insurance_clean
+GROUP BY smoker, bmi_category
+ORDER BY AVG(charges) DESC;
+
+------------------------------------------------------------------------------------------
+-- Section C : Dashboard Table --
+CREATE VIEW insurance_dashboard AS
+SELECT *, 
+		CASE
+			WHEN age BETWEEN 18 AND 25 THEN '18–25'
+			WHEN age BETWEEN 26 AND 35 THEN '26–35'
+			WHEN age BETWEEN 36 AND 45 THEN '36–45'
+			WHEN age BETWEEN 46 AND 55 THEN '46–55'
+			ELSE '56+'
+		END AS age_group,
+		CASE 
+			WHEN bmi < 18.5 THEN 'Underweight'
+			WHEN bmi <= 22.9 THEN 'Normal Weight'
+			WHEN bmi <= 24.9 THEN 'Overweight'
+			WHEN bmi <= 29.9 THEN 'Obesity level 1'
+			ELSE 'Obesity level 2'
+		END AS bmi_category
+FROM insurance_clean
